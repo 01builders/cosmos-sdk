@@ -75,6 +75,7 @@ func init() {
 			ProvideHeaderInfoService,
 			ProvideCometInfoService,
 			ProvideBasicManager,
+			ProvideAppVersionModifier,
 			ProvideAddressCodec,
 		),
 		appmodule.Invoke(SetupAppBuilder),
@@ -258,6 +259,10 @@ func ProvideHeaderInfoService(app *AppBuilder) header.Service {
 
 func ProvideBasicManager(app *AppBuilder) module.BasicManager {
 	return app.app.basicManager
+}
+
+func ProvideAppVersionModifier(app *AppBuilder) baseapp.AppVersionModifier {
+	return app.app
 }
 
 type (
