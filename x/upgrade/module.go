@@ -183,7 +183,7 @@ type ModuleInputs struct {
 	StoreService       store.KVStoreService
 	Cdc                codec.Codec
 	AddressCodec       address.Codec
-	AppVersionModifier baseapp.AppVersionModifier
+	AppVersionModifier baseapp.VersionModifier
 
 	AppOpts servertypes.AppOptions `optional:"true"`
 	Viper   *viper.Viper           `optional:"true"`
