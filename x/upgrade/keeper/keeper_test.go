@@ -55,6 +55,7 @@ func (s *KeeperTestSuite) SetupTest() {
 		s.encCfg.TxConfig.TxDecoder(),
 	)
 	s.baseApp.SetParamStore(&paramStore{params: cmttypes.DefaultConsensusParams().ToProto()})
+	s.baseApp.SetVersionModifier(newMockedVersionModifier(0))
 	appVersion, err := s.baseApp.AppVersion(context.Background())
 	s.Require().NoError(err)
 	s.Require().Equal(uint64(0), appVersion)
@@ -70,6 +71,23 @@ func (s *KeeperTestSuite) SetupTest() {
 
 	s.msgSrvr = keeper.NewMsgServerImpl(s.upgradeKeeper)
 	s.addrs = simtestutil.CreateIncrementalAccounts(1)
+}
+
+func newMockedVersionModifier(startingVersion uint64) baseapp.VersionModifier {
+	return &mockedVersionModifier{version: startingVersion}
+}
+
+type mockedVersionModifier struct {
+	version uint64
+}
+
+func (m *mockedVersionModifier) SetAppVersion(ctx context.Context, u uint64) error {
+	m.version = u
+	return nil
+}
+
+func (m *mockedVersionModifier) AppVersion(ctx context.Context) (uint64, error) {
+	return m.version, nil
 }
 
 func (s *KeeperTestSuite) TestReadUpgradeInfoFromDisk() {
