@@ -369,7 +369,6 @@ func (s *KeeperTestSuite) TestLastCompletedUpgradeOrdering() {
 		Name:   "test-v0.9",
 		Height: 10,
 	})
-	require.NoError(err)
 
 	name, height, err := keeper.GetLastCompletedUpgrade(s.ctx)
 	require.Equal("test-v0.9", name)
