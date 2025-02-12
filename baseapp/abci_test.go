@@ -54,10 +54,12 @@ func TestABCI_Info(t *testing.T) {
 	res, err := suite.baseApp.Info(&reqInfo)
 	require.NoError(t, err)
 
+	emptyHash := sha256.Sum256([]byte{})
+	appHash := emptyHash[:]
 	require.Equal(t, "", res.Version)
 	require.Equal(t, t.Name(), res.GetData())
 	require.Equal(t, int64(0), res.LastBlockHeight)
-	require.Equal(t, []uint8(nil), res.LastBlockAppHash)
+	require.Equal(t, appHash, res.LastBlockAppHash)
 	appVersion, err := suite.baseApp.AppVersion(ctx)
 	require.NoError(t, err)
 	require.Equal(t, appVersion, res.AppVersion)
