@@ -43,8 +43,16 @@ func (s msgServer) CreateVestingAccount(goCtx context.Context, msg *types.MsgCre
 		return nil, err
 	}
 
+	if msg.StartTime <= 0 {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid start time")
+	}
+
 	if msg.EndTime <= 0 {
 		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid end time")
+	}
+
+	if msg.EndTime <= msg.StartTime {
+		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid start and end time (must be start < end)")
 	}
 
 	ctx := sdk.UnwrapSDKContext(goCtx)
@@ -54,14 +62,6 @@ func (s msgServer) CreateVestingAccount(goCtx context.Context, msg *types.MsgCre
 
 	if s.BankKeeper.BlockedAddr(to) {
 		return nil, errorsmod.Wrapf(sdkerrors.ErrUnauthorized, "%s is not allowed to receive funds", msg.ToAddress)
-	}
-
-	if msg.EndTime <= 0 {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid end time")
-	}
-
-	if msg.EndTime <= msg.StartTime {
-		return nil, errorsmod.Wrap(sdkerrors.ErrInvalidRequest, "invalid start and end time (must be start < end)")
 	}
 
 	if acc := s.GetAccount(ctx, to); acc != nil {
