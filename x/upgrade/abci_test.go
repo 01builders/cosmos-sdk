@@ -123,6 +123,7 @@ func setupTest(t *testing.T, height int64, skip map[int64]bool) *TestSuite {
 	)
 
 	s.baseApp.SetParamStore(&paramStore{params: cmtproto.ConsensusParams{Version: &cmtproto.VersionParams{App: 1}}})
+	s.baseApp.SetVersionModifier(newMockedVersionModifier(1))
 
 	s.keeper = keeper.NewKeeper(skip, storeService, s.encCfg.Codec, t.TempDir(), s.baseApp, authtypes.NewModuleAddress(govtypes.ModuleName).String())
 
@@ -130,6 +131,23 @@ func setupTest(t *testing.T, height int64, skip map[int64]bool) *TestSuite {
 
 	s.preModule = upgrade.NewAppModule(s.keeper, addresscodec.NewBech32Codec("cosmos"))
 	return &s
+}
+
+func newMockedVersionModifier(startingVersion uint64) baseapp.VersionModifier {
+	return &mockedVersionModifier{version: startingVersion}
+}
+
+type mockedVersionModifier struct {
+	version uint64
+}
+
+func (m *mockedVersionModifier) SetAppVersion(ctx context.Context, u uint64) error {
+	m.version = u
+	return nil
+}
+
+func (m *mockedVersionModifier) AppVersion(ctx context.Context) (uint64, error) {
+	return m.version, nil
 }
 
 func TestRequireFutureBlock(t *testing.T) {
