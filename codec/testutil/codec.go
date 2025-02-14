@@ -20,12 +20,12 @@ type CodecOptions struct {
 func (o CodecOptions) NewInterfaceRegistry() codectypes.InterfaceRegistry {
 	accAddressPrefix := o.AccAddressPrefix
 	if accAddressPrefix == "" {
-		accAddressPrefix = "cosmos"
+		accAddressPrefix = "celestia"
 	}
 
 	valAddressPrefix := o.ValAddressPrefix
 	if valAddressPrefix == "" {
-		valAddressPrefix = "cosmosvaloper"
+		valAddressPrefix = "celestiavaloper"
 	}
 
 	ir, err := codectypes.NewInterfaceRegistryWithOptions(codectypes.InterfaceRegistryOptions{
