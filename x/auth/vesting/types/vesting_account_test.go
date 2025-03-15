@@ -1204,7 +1204,6 @@ func TestUpdateSchedulePeriodicVestingAcc(t *testing.T) {
 	// Store original periods for comparison
 	originalPeriods := make(types.Periods, len(pva.VestingPeriods))
 	copy(originalPeriods, pva.VestingPeriods)
-	originalEndTime := pva.EndTime
 
 	// Manually calculate how the periods should be updated
 	// Distribute proportionally across remaining periods
@@ -1260,7 +1259,7 @@ func TestUpdateSchedulePeriodicVestingAcc(t *testing.T) {
 	pva.DelegatedFree = sdk.NewCoins(sdk.NewInt64Coin(feeDenom, 500), sdk.NewInt64Coin(stakeDenom, 50))
 
 	// Original end time and period count before update
-	originalEndTime = pva.EndTime
+	originalEndTime := pva.EndTime
 	originalPeriodCount := len(pva.VestingPeriods)
 
 	// For testing, we'll manually update the account to simulate what UpdateSchedule would do
