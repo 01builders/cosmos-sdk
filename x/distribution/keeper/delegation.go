@@ -253,6 +253,18 @@ func (k Keeper) withdrawDelegationRewards(ctx context.Context, val stakingtypes.
 			return nil, err
 		}
 
+		// we need to check if the withdraw address is a vesting account
+		vestingAcc := k.authKeeper.GetAccount(ctx, withdrawAddr)
+		if v, ok := vestingAcc.(types.VestingAccount); ok {
+			// update account with rewards being sent
+			if err := v.UpdateSchedule(finalRewards); err != nil {
+				return nil, err
+			}
+
+			// set the updated account
+			k.authKeeper.SetAccount(ctx, vestingAcc)
+		}
+
 		err = k.bankKeeper.SendCoinsFromModuleToAccount(ctx, types.ModuleName, withdrawAddr, finalRewards)
 		if err != nil {
 			return nil, err

@@ -162,6 +162,38 @@ func (bva BaseVestingAccount) Validate() error {
 	return bva.BaseAccount.Validate()
 }
 
+// UpdateSchedule updates the vesting schedule for a base vesting account.
+// It calculates the proportion of the passed amount that should be used for updating
+// based on the ratio of delegated vesting to total delegation.
+func (bva *BaseVestingAccount) UpdateSchedule(amount sdk.Coins) error {
+	totalDelegated := bva.DelegatedFree.Add(bva.DelegatedVesting...)
+	if totalDelegated.IsZero() {
+		return nil // No delegations, nothing to update
+	}
+
+	// Calculate what portion of the amount should be applied based on delegated vesting ratio
+	var updatedAmount sdk.Coins
+	for _, coin := range amount {
+		denom := coin.Denom
+		totalDelegatedForDenom := totalDelegated.AmountOf(denom)
+		if totalDelegatedForDenom.IsZero() {
+			continue
+		}
+
+		delegatedVestingForDenom := bva.DelegatedVesting.AmountOf(denom)
+		ratio := math.LegacyNewDecFromInt(delegatedVestingForDenom).Quo(math.LegacyNewDecFromInt(totalDelegatedForDenom))
+		amountToUse := math.LegacyNewDecFromInt(coin.Amount).Mul(ratio).RoundInt()
+
+		if !amountToUse.IsZero() {
+			updatedAmount = updatedAmount.Add(sdk.NewCoin(denom, amountToUse))
+		}
+	}
+
+	// Add the calculated amount to original vesting
+	bva.OriginalVesting = bva.OriginalVesting.Add(updatedAmount...)
+	return nil
+}
+
 // Continuous Vesting Account
 
 var (
@@ -252,6 +284,27 @@ func (cva ContinuousVestingAccount) Validate() error {
 	}
 
 	return cva.BaseVestingAccount.Validate()
+}
+
+// UpdateSchedule updates the vesting schedule for a continuous vesting account.
+// It delegates to the base vesting account implementation and adjusts end time if needed.
+func (cva *ContinuousVestingAccount) UpdateSchedule(amount sdk.Coins) error {
+	if err := cva.BaseVestingAccount.UpdateSchedule(amount); err != nil {
+		return err
+	}
+
+	// If we're adding more vesting tokens and the account is already past its end time,
+	// extend the end time proportionally
+	currentTime := time.Now().Unix()
+	if currentTime > cva.EndTime && !amount.IsZero() {
+		// Calculate a reasonable extension based on the original vesting duration
+		originalDuration := cva.EndTime - cva.StartTime
+		if originalDuration > 0 {
+			cva.EndTime = currentTime + originalDuration
+		}
+	}
+
+	return nil
 }
 
 // Periodic Vesting Account
@@ -387,6 +440,96 @@ func (pva PeriodicVestingAccount) Validate() error {
 	return pva.BaseVestingAccount.Validate()
 }
 
+// UpdateSchedule updates the vesting schedule for a periodic vesting account.
+// It takes in the amount of coins from the rewards and updates the vesting schedule
+// based on the ratio of delegated vesting to total delegated coins.
+func (pva *PeriodicVestingAccount) UpdateSchedule(amount sdk.Coins) error {
+	if err := pva.BaseVestingAccount.UpdateSchedule(amount); err != nil {
+		return err
+	}
+
+	// If there are no periods or amount is zero, nothing to do
+	if len(pva.VestingPeriods) == 0 || amount.IsZero() {
+		return nil
+	}
+
+	// For periodic vesting, distribute the new amount proportionally across existing periods
+	// or add a new period if the account's end time has passed
+	currentTime := time.Now().Unix()
+
+	if currentTime > pva.EndTime {
+		// Account has completed vesting, add a new period
+		// Use the average length of existing periods as a reference
+		totalLength := int64(0)
+		for _, period := range pva.VestingPeriods {
+			totalLength += period.Length
+		}
+
+		avgPeriodLength := totalLength / int64(len(pva.VestingPeriods))
+		if avgPeriodLength <= 0 {
+			avgPeriodLength = 30 * 24 * 60 * 60 // Default to 30 days if can't determine
+		}
+
+		newPeriod := Period{
+			Length: avgPeriodLength,
+			Amount: amount,
+		}
+
+		pva.VestingPeriods = append(pva.VestingPeriods, newPeriod)
+		pva.EndTime += avgPeriodLength
+	} else {
+		// Account is still vesting, distribute proportionally across remaining periods
+		remainingPeriods := 0
+		for i := range pva.VestingPeriods {
+			periodEndTime := pva.StartTime
+			for j := 0; j <= i; j++ {
+				periodEndTime += pva.VestingPeriods[j].Length
+			}
+
+			if periodEndTime > currentTime {
+				remainingPeriods++
+			}
+		}
+
+		if remainingPeriods == 0 {
+			remainingPeriods = 1 // At least one period should remain
+		}
+
+		// Distribute amount evenly across remaining periods
+		amountPerPeriod := sdk.NewCoins()
+		for _, coin := range amount {
+			amtPerPeriod := coin.Amount.Quo(math.NewInt(int64(remainingPeriods)))
+			if !amtPerPeriod.IsZero() {
+				amountPerPeriod = amountPerPeriod.Add(sdk.NewCoin(coin.Denom, amtPerPeriod))
+			}
+		}
+
+		periodCount := 0
+		for i := range pva.VestingPeriods {
+			periodEndTime := pva.StartTime
+			for j := 0; j <= i; j++ {
+				periodEndTime += pva.VestingPeriods[j].Length
+			}
+
+			if periodEndTime > currentTime {
+				if periodCount < remainingPeriods-1 {
+					pva.VestingPeriods[i].Amount = pva.VestingPeriods[i].Amount.Add(amountPerPeriod...)
+					periodCount++
+				} else {
+					// Last period gets any remaining amount
+					remaining := amount
+					for d := 0; d < periodCount; d++ {
+						remaining = remaining.Sub(amountPerPeriod...)
+					}
+					pva.VestingPeriods[i].Amount = pva.VestingPeriods[i].Amount.Add(remaining...)
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
 // Delayed Vesting Account
 
 var (
@@ -453,6 +596,11 @@ func (dva DelayedVestingAccount) Validate() error {
 	return dva.BaseVestingAccount.Validate()
 }
 
+// UpdateSchedule updates the vesting schedule for a delayed vesting account.
+func (dva *DelayedVestingAccount) UpdateSchedule(amount sdk.Coins) error {
+	return dva.BaseVestingAccount.UpdateSchedule(amount)
+}
+
 //-----------------------------------------------------------------------------
 // Permanent Locked Vesting Account
 
@@ -517,4 +665,9 @@ func (plva PermanentLockedAccount) Validate() error {
 	}
 
 	return plva.BaseVestingAccount.Validate()
+}
+
+// UpdateSchedule updates the vesting schedule for a permanent locked account.
+func (plva *PermanentLockedAccount) UpdateSchedule(amount sdk.Coins) error {
+	return plva.BaseVestingAccount.UpdateSchedule(amount)
 }
