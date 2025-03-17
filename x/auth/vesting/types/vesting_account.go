@@ -293,17 +293,6 @@ func (cva *ContinuousVestingAccount) UpdateSchedule(amount sdk.Coins) error {
 		return err
 	}
 
-	// If we're adding more vesting tokens and the account is already past its end time,
-	// extend the end time proportionally
-	currentTime := time.Now().Unix()
-	if currentTime > cva.EndTime && !amount.IsZero() {
-		// Calculate a reasonable extension based on the original vesting duration
-		originalDuration := cva.EndTime - cva.StartTime
-		if originalDuration > 0 {
-			cva.EndTime = currentTime + originalDuration
-		}
-	}
-
 	return nil
 }
 
