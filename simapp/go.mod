@@ -236,7 +236,7 @@ replace (
 	// use cosmos fork of keyring
 	github.com/99designs/keyring => github.com/cosmos/keyring v1.2.0
 	// use celestia-core fork of cometbft
-	github.com/cometbft/cometbft => github.com/celestiaorg/celestia-core ec71e5a427b11152be4f0428aaef0d95aa344d2e
+	github.com/cometbft/cometbft => github.com/celestiaorg/celestia-core v0.38.11-0.20250320105812-ec71e5a427b1
 	// Simapp always use the latest version of the cosmos-sdk
 	github.com/cosmos/cosmos-sdk => ../.
 	// Fix upstream GHSA-h395-qcrw-5vmq and GHSA-3vp4-m3rf-835h vulnerabilities.
