@@ -1350,21 +1350,11 @@ func (app *BaseApp) GetBlockRetentionHeight(commitHeight int64) int64 {
 			return y
 		}
 	}
-
 	// Define retentionHeight as the minimum value that satisfies all non-zero
 	// constraints. All blocks below (commitHeight-retentionHeight) are pruned
 	// from CometBFT.
+	// Default is 0
 	var retentionHeight int64
-
-	// Define the number of blocks needed to protect against misbehaving validators
-	// which allows light clients to operate safely. Note, we piggy back of the
-	// evidence parameters instead of computing an estimated number of blocks based
-	// on the unbonding period and block commitment time as the two should be
-	// equivalent.
-	cp := app.GetConsensusParams(app.finalizeBlockState.Context())
-	if cp.Evidence != nil && cp.Evidence.MaxAgeNumBlocks > 0 {
-		retentionHeight = commitHeight - cp.Evidence.MaxAgeNumBlocks
-	}
 
 	if app.snapshotManager != nil {
 		snapshotRetentionHeights := app.snapshotManager.GetSnapshotBlockRetentionHeights()
