@@ -1280,7 +1280,7 @@ func TestABCI_GetBlockRetentionHeight(t *testing.T) {
 			expected:     0,
 		},
 		"pruning unbonding time only": {
-			bapp:         baseapp.NewBaseApp(name, logger, db, nil, baseapp.SetMinRetainBlocks(1)),
+			bapp:         baseapp.NewBaseApp(name, logger, db, nil, baseapp.SetMinRetainBlocks(362880)),
 			maxAgeBlocks: 362880,
 			commitHeight: 499000,
 			expected:     136120,
