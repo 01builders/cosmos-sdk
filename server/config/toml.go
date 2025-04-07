@@ -61,7 +61,7 @@ halt-time = {{ .BaseConfig.HaltTime }}
 # Note: CometBFT block pruning is dependant on this parameter, state pruning and state sync
 # snapshot parameters to determine the correct minimum value of
 # ResponseCommit.RetainHeight.
-# NOTE: in celestia v4, block pruning will prune within the unbonding window
+# NOTE: in Celestia v4, block pruning will prune within the unbonding window
 min-retain-blocks = {{ .BaseConfig.MinRetainBlocks }}
 
 # InterBlockCache enables inter-block caching.
