@@ -377,7 +377,7 @@ func (app *BaseApp) CheckTx(req *abci.RequestCheckTx) (*abci.ResponseCheckTx, er
 		Log:       result.Log,
 		Data:      result.Data,
 		Events:    sdk.MarkEventsToIndex(result.Events, app.indexEvents),
-		GasFees:   uint64(priority),
+		Priority:  priority,
 	}, nil
 }
 
