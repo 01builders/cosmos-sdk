@@ -495,20 +495,21 @@ func (dva *DelayedVestingAccount) UpdateSchedule(blockTime time.Time, amount sdk
 		return nil
 	}
 
+	// 1. Get the original vesting schedule
 	originalVesting := dva.BaseVestingAccount.GetOriginalVesting()
-	var amountToAdd sdk.Coins
 
-	// Add the full amount for existing denominations since the account is entirely unvested.
+	// 2. Iterate over the input amount
 	for _, coin := range amount {
-		if originalVesting.AmountOf(coin.Denom).IsPositive() {
-			// Only add if the denomination exists in the original vesting.
-			amountToAdd = amountToAdd.Add(coin)
+		// 3. Check if the denomination is originally vesting
+		origCoin := originalVesting.AmountOf(coin.Denom)
+		// 4. If the denomination wasn't originally vesting, skip it.
+		// Do not add new denominations to the original vesting schedule during an update.
+		if origCoin.IsZero() {
+			continue
 		}
-	}
 
-	// Add the filtered amount to original vesting
-	if !amountToAdd.IsZero() {
-		dva.BaseVestingAccount.OriginalVesting = dva.BaseVestingAccount.OriginalVesting.Add(amountToAdd...)
+		// 5. Add the coin to the original vesting schedule
+		dva.BaseVestingAccount.OriginalVesting = dva.BaseVestingAccount.OriginalVesting.Add(coin)
 	}
 
 	return nil

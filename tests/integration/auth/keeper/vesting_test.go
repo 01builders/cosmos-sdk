@@ -1,7 +1,6 @@
 package keeper
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -159,7 +158,6 @@ func TestIntegration_ContinuousVesting_UpdateScheduleAndSend(t *testing.T) {
 	cvaAfterUpdate, ok := accAfterUpdate.(*vestingtypes.ContinuousVestingAccount)
 	require.True(t, ok)
 	require.Equal(t, sdk.NewCoins(sdk.NewCoin(stakeDenom, math.NewInt(1500))), cvaAfterUpdate.GetOriginalVesting(), "OriginalVesting in store mismatch after update")
-	fmt.Println("checkTime", checkTime, ctx.BlockTime())
 	ctx = ctx.WithBlockTime(checkTime)
 
 	spendableCoins := f.bankKeeper.SpendableCoins(ctx, senderAddr)
