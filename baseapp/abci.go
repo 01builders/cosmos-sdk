@@ -1356,7 +1356,7 @@ func (app *BaseApp) GetBlockRetentionHeight(commitHeight int64) int64 {
 	// constraints. All blocks below (commitHeight-retentionHeight) are pruned
 	// from CometBFT.
 	// Default is 0
-	var retentionHeight int64
+	retentionHeight := int64(10)
 
 	if app.snapshotManager != nil {
 		snapshotRetentionHeights := app.snapshotManager.GetSnapshotBlockRetentionHeights()
