@@ -58,7 +58,7 @@ halt-time = {{ .BaseConfig.HaltTime }}
 # It has no bearing on application state pruning which is determined by the
 # "pruning-*" configurations.
 #
-# Note: CometBFT block pruning is dependant on this parameter, state pruning and state sync
+# Note: CometBFT block pruning is dependant on this parameter
 # snapshot parameters to determine the correct minimum value of
 # ResponseCommit.RetainHeight.
 # NOTE: in Celestia v4, block pruning will prune within the unbonding window
