@@ -7,6 +7,9 @@ import (
 
 	"google.golang.org/grpc"
 
+	"github.com/cometbft/cometbft/rpc/core"
+	coregrpc "github.com/cometbft/cometbft/rpc/grpc"
+
 	"cosmossdk.io/log"
 
 	"github.com/cosmos/cosmos-sdk/client"
@@ -21,7 +24,7 @@ import (
 
 // NewGRPCServer returns a correctly configured and initialized gRPC server.
 // Note, the caller is responsible for starting the server. See StartGRPCServer.
-func NewGRPCServer(clientCtx client.Context, app types.Application, cfg config.GRPCConfig) (*grpc.Server, error) {
+func NewGRPCServer(clientCtx client.Context, app types.Application, cfg config.GRPCConfig, coreEnv *core.Environment) (*grpc.Server, error) {
 	maxSendMsgSize := cfg.MaxSendMsgSize
 	if maxSendMsgSize == 0 {
 		maxSendMsgSize = config.DefaultGRPCMaxSendMsgSize
@@ -37,6 +40,12 @@ func NewGRPCServer(clientCtx client.Context, app types.Application, cfg config.G
 		grpc.MaxSendMsgSize(maxSendMsgSize),
 		grpc.MaxRecvMsgSize(maxRecvMsgSize),
 	)
+
+	if coreEnv != nil {
+		blockAPI := coregrpc.NewBlockAPI(coreEnv)
+		go blockAPI.StartNewBlockEventListener(context.Background())
+		coregrpc.RegisterBlockAPIServiceServer(grpcSrv, blockAPI)
+	}
 
 	app.RegisterGRPCServer(grpcSrv)
 

@@ -24,6 +24,7 @@ import (
 	"github.com/cometbft/cometbft/proxy"
 	rpchttp "github.com/cometbft/cometbft/rpc/client/http"
 	"github.com/cometbft/cometbft/rpc/client/local"
+	"github.com/cometbft/cometbft/rpc/core"
 	sm "github.com/cometbft/cometbft/state"
 	"github.com/cometbft/cometbft/store"
 	cmttypes "github.com/cometbft/cometbft/types"
@@ -275,7 +276,7 @@ func startStandAlone(svrCtx *Context, svrCfg serverconfig.Config, clientCtx clie
 		app.RegisterNodeService(clientCtx, svrCfg)
 	}
 
-	grpcSrv, clientCtx, err := startGrpcServer(ctx, g, svrCfg.GRPC, clientCtx, svrCtx, app)
+	grpcSrv, clientCtx, err := startGrpcServer(ctx, nil, g, svrCfg.GRPC, clientCtx, svrCtx, app)
 	if err != nil {
 		return err
 	}
@@ -315,6 +316,7 @@ func startInProcess(svrCtx *Context, svrCfg serverconfig.Config, clientCtx clien
 
 	g, ctx := getCtx(svrCtx, true)
 
+	var coreEnv *core.Environment
 	if gRPCOnly {
 		// TODO: Generalize logic so that gRPC only is really in startStandAlone
 		svrCtx.Logger.Info("starting node in gRPC only mode; CometBFT is disabled")
@@ -326,6 +328,11 @@ func startInProcess(svrCtx *Context, svrCfg serverconfig.Config, clientCtx clien
 			return err
 		}
 		defer cleanupFn()
+
+		coreEnv, err = tmNode.ConfigureRPC()
+		if err != nil {
+			return err
+		}
 
 		// Add the tx service to the gRPC router. We only need to register this
 		// service if API or gRPC is enabled, and avoid doing so in the general
@@ -341,7 +348,7 @@ func startInProcess(svrCtx *Context, svrCfg serverconfig.Config, clientCtx clien
 		}
 	}
 
-	grpcSrv, clientCtx, err := startGrpcServer(ctx, g, svrCfg.GRPC, clientCtx, svrCtx, app)
+	grpcSrv, clientCtx, err := startGrpcServer(ctx, coreEnv, g, svrCfg.GRPC, clientCtx, svrCtx, app)
 	if err != nil {
 		return err
 	}
@@ -451,6 +458,7 @@ func setupTraceWriter(svrCtx *Context) (traceWriter io.WriteCloser, cleanup func
 
 func startGrpcServer(
 	ctx context.Context,
+	coreEnv *core.Environment,
 	g *errgroup.Group,
 	config serverconfig.GRPCConfig,
 	clientCtx client.Context,
@@ -493,7 +501,7 @@ func startGrpcServer(
 	clientCtx = clientCtx.WithGRPCClient(grpcClient)
 	svrCtx.Logger.Debug("gRPC client assigned to client context", "target", config.Address)
 
-	grpcSrv, err := servergrpc.NewGRPCServer(clientCtx, app, config)
+	grpcSrv, err := servergrpc.NewGRPCServer(clientCtx, app, config, coreEnv)
 	if err != nil {
 		return nil, clientCtx, err
 	}
