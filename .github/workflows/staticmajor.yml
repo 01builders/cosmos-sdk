@@ -13,6 +13,9 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v3
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: 'go.mod'
       - name: Staticmajor action
         id: staticmajor
         uses: orijtech/staticmajor-action@main
