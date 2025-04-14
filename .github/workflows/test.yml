@@ -214,7 +214,7 @@ jobs:
       - name: test liveness
         if: env.GIT_DIFF
         run: |
-          ./contrib/localnet_liveness.sh 100 5 50 localhost
+          ./contrib/localnet_liveness.sh 100 2 50 localhost
 
   test-sim-nondeterminism:
     runs-on: ubuntu-latest
