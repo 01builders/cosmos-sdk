@@ -414,7 +414,7 @@ func TestGRPCValidatorDelegations(t *testing.T) {
 		ValidatorAddr: validator.OperatorAddress,
 	}
 
-	testdata.DeterministicIterations(f.ctx, t, req, f.queryClient.ValidatorDelegations, 14475, false)
+	testdata.DeterministicIterations(f.ctx, t, req, f.queryClient.ValidatorDelegations, 17484, false)
 }
 
 func TestGRPCValidatorUnbondingDelegations(t *testing.T) {
@@ -701,7 +701,7 @@ func TestGRPCHistoricalInfo(t *testing.T) {
 		Height: height,
 	}
 
-	testdata.DeterministicIterations(f.ctx, t, req, f.queryClient.HistoricalInfo, 1945, false)
+	testdata.DeterministicIterations(f.ctx, t, req, f.queryClient.HistoricalInfo, 2945, false)
 }
 
 func TestGRPCDelegatorValidators(t *testing.T) {
